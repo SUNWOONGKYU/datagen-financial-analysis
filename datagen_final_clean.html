@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터젠 재무제표 완전분석</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: right; }
+        th { background-color: #3498db; color: white; font-weight: bold; text-align: center; font-size: 13px; }
+        .company-header { background-color: #28a745 !important; color: white !important; width: 150px; }
+        .auditor-header { background-color: #dc3545 !important; color: white !important; width: 150px; }
+        .category { background-color: #2c3e50; color: white; font-weight: bold; text-align: left; }
+        .subcategory { background-color: #34495e; color: white; font-weight: bold; text-align: left; padding-left: 15px; }
+        .account { text-align: left; padding-left: 35px; background-color: #f8f9fa; }
+        .positive { color: #27ae60; font-weight: bold; }
+        .negative { color: #e74c3c; font-weight: bold; }
+        .neutral { color: #7f8c8d; }
+        .total { background-color: #3498db !important; color: white !important; font-weight: bold; }
+        .company-cell { 
+            background-color: #f8fff9 !important; 
+            border-left: 3px solid #28a745 !important; 
+            text-align: left !important; 
+            padding: 8px !important; 
+            cursor: text !important; 
+            word-wrap: break-word !important; 
+            vertical-align: top !important; 
+            min-width: 150px; 
+            max-width: 200px; 
+            font-size: 12px !important;
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        .company-cell:focus { 
+            outline: 2px solid #28a745 !important; 
+            background-color: #ffffff !important; 
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        .company-cell:hover { 
+            background-color: #e6ffe6 !important; 
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        .auditor-cell { 
+            background-color: #fff8f8 !important; 
+            border-left: 3px solid #dc3545 !important; 
+            text-align: left !important; 
+            padding: 8px !important; 
+            cursor: text !important; 
+            word-wrap: break-word !important; 
+            vertical-align: top !important; 
+            min-width: 150px; 
+            max-width: 200px; 
+            font-size: 12px !important;
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        .auditor-cell:focus { 
+            outline: 2px solid #dc3545 !important; 
+            background-color: #ffffff !important; 
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        .auditor-cell:hover { 
+            background-color: #ffe6e6 !important; 
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        .total .company-cell,
+        .total .auditor-cell {
+            background-color: #ffffff !important;
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        .total .company-cell:focus,
+        .total .auditor-cell:focus {
+            background-color: #ffffff !important;
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        .placeholder-text { 
+            color: #999 !important; 
+            font-style: italic; 
+            opacity: 0.8; 
+            font-size: 11px !important; 
+            font-weight: normal !important; 
+        }
+        .summary { background-color: #e8f4f8; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .export-btn { background-color: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin: 10px 5px; }
+        .export-btn:hover { background-color: #219a52; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>㈜데이터젠 재무제표 전체 계정과목 완전분석</h1>
+        <p><strong>분석기간:</strong> 2024.12.31 → 2025.06.30 (6개월)</p>
+        
+        <div class="summary">
+            <h3>🔍 주요 변동사항 요약</h3>
+            <ul>
+                <li><strong>매출 성장:</strong> 반기 매출 14.6억원 (연환산 29.1억원, 전년 21.6억원 대비 35% 증가)</li>
+                <li><strong>매출구조 변화:</strong> 상품매출 급증(5.5억원), 용역매출 감소(6.3억원), 수수료매출 증가(2.8억원)</li>
+                <li><strong>수익성 개선:</strong> 당기순이익 1.82억원 (연환산 3.6억원 vs 전년 2.9억원)</li>
+                <li><strong>자본 구조 개선:</strong> 전환사채 전환으로 자본금 43.75백만원 증가, 결손금 완전 해소</li>
+                <li><strong>부채 크게 감소:</strong> 전환사채 3.2억원 감소, 장기차입금 1.3억원 상환으로 총 부채 24.6% 감소</li>
+            </ul>
+        </div>
+
+        <div>
+            <button class="export-btn" onclick="downloadShare()">📁 공유용 파일 다운로드</button>
+            <button class="export-btn" onclick="exportCSV('balance-sheet', '재무상태표')">재무상태표 CSV</button>
+            <button class="export-btn" onclick="exportCSV('income-statement', '손익계산서')">손익계산서 CSV</button>
+            <button class="export-btn" onclick="exportCSV('service-cost', '용역원가명세서')">용역원가명세서 CSV</button>
+        </div>
+
+        <h2>1. 재무상태표 전체 계정과목 변동분석</h2>
+        <table id="balance-sheet">
+            <thead>
+                <tr>
+                    <th style="width:180px">계정과목</th><th style="width:110px">2024.12.31</th><th style="width:110px">2025.06.30</th><th style="width:110px">증감액</th><th style="width:70px">증감률</th><th style="width:140px">비고</th><th class="company-header">회사확인</th><th class="auditor-header">감사인확인</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="category"><td>【자 산】</td><td></td><td></td><td></td><td></td><td></td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅰ. 유동자산</td><td>903,764,722</td><td>864,501,274</td><td class="negative">-39,263,448</td><td class="negative">-4.3%</td><td>현금성자산 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>(1) 당좌자산</td><td>903,764,722</td><td>864,501,274</td><td class="negative">-39,263,448</td><td class="negative">-4.3%</td><td>전액 당좌자산</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>현금 및 현금등가물</td><td>503,901,955</td><td>357,896,770</td><td class="negative">-146,005,185</td><td class="negative">-29.0%</td><td>운영자금 사용</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>매출채권</td><td>0</td><td>27,526,249</td><td class="positive">+27,526,249</td><td class="positive">신규</td><td>매출증가 따른 발생</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>선급금</td><td>396,800,000</td><td>477,612,750</td><td class="positive">+80,812,750</td><td class="positive">+20.4%</td><td>선급금 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>선급비용</td><td>3,062,767</td><td>1,459,785</td><td class="negative">-1,602,982</td><td class="negative">-52.3%</td><td>선급비용 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>선납세금</td><td>0</td><td>5,720</td><td class="positive">+5,720</td><td class="positive">신규</td><td>선납세금 발생</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>(2) 재고자산</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>재고자산 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅱ. 비유동자산</td><td>6,960,714,368</td><td>6,981,769,988</td><td class="positive">+21,055,620</td><td class="positive">+0.3%</td><td>무형자산 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>(1) 투자자산</td><td>645,070,642</td><td>645,126,262</td><td class="positive">+55,620</td><td class="positive">+0.0%</td><td>장기대여금 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>매도가능증권</td><td>100,000,000</td><td>100,000,000</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>관계회사 출자금</td><td>890,000</td><td>890,000</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>종속기업 투자주식</td><td>250,000,000</td><td>250,000,000</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>관계회사 장기대여금</td><td>294,180,642</td><td>294,236,262</td><td class="positive">+55,620</td><td class="positive">+0.0%</td><td>소폭 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>(2) 유형자산</td><td>51,073,374</td><td>51,073,374</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>차량운반구</td><td>171,464,281</td><td>171,464,281</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>감가상각누계액(차량)</td><td>(129,738,805)</td><td>(129,738,805)</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>비품</td><td>20,716,299</td><td>20,716,299</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>감가상각누계액(비품)</td><td>(11,368,401)</td><td>(11,368,401)</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>(3) 무형자산</td><td>6,214,570,352</td><td>6,215,570,352</td><td class="positive">+1,000,000</td><td class="positive">+0.0%</td><td>산업재산권 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>산업재산권</td><td>16,276,231</td><td>17,276,231</td><td class="positive">+1,000,000</td><td class="positive">+6.1%</td><td>특허권 취득</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>개발비</td><td>6,198,294,121</td><td>6,198,294,121</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>(4) 기타비유동자산</td><td>50,000,000</td><td>70,000,000</td><td class="positive">+20,000,000</td><td class="positive">+40.0%</td><td>임차보증금 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>임차보증금</td><td>50,000,000</td><td>70,000,000</td><td class="positive">+20,000,000</td><td class="positive">+40.0%</td><td>사무실 이전 등</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="total"><td>자산총계</td><td>7,864,479,090</td><td>7,846,271,262</td><td class="negative">-18,207,828</td><td class="negative">-0.2%</td><td>안정적 자산수준</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="category"><td>【부 채】</td><td></td><td></td><td></td><td></td><td></td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅰ. 유동부채</td><td>1,777,175,672</td><td>1,419,345,150</td><td class="positive">-357,830,522</td><td class="positive">-20.1%</td><td>전환사채 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>매입채무</td><td>5,151,900</td><td>12,770,782</td><td class="negative">+7,618,882</td><td class="negative">+148%</td><td>매입채무 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>미지급금</td><td>36,725,005</td><td>78,819,004</td><td class="negative">+42,093,999</td><td class="negative">+115%</td><td>미지급금 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>예수금</td><td>10,588,870</td><td>10,256,130</td><td class="positive">-332,740</td><td class="positive">-3.1%</td><td>소폭감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>선수금</td><td>0</td><td>96,000,000</td><td class="negative">+96,000,000</td><td class="negative">신규</td><td>선수금 신규발생</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>단기차입금</td><td>1,000,149,734</td><td>1,000,149,734</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>미지급세금</td><td>90,235,430</td><td>17,627,850</td><td class="positive">-72,607,580</td><td class="positive">-80.5%</td><td>세금납부로 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>미지급비용</td><td>33,456,930</td><td>308,200</td><td class="positive">-33,148,730</td><td class="positive">-99.1%</td><td>미지급비용 대폭감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>관계회사 단기차입금</td><td>55,613,450</td><td>53,413,450</td><td class="positive">-2,200,000</td><td class="positive">-4.0%</td><td>상환</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>전환사채</td><td>470,000,000</td><td>150,000,000</td><td class="positive">-320,000,000</td><td class="positive">-68.1%</td><td>일부전환</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>상환할증금</td><td>89,777,520</td><td>0</td><td class="positive">-89,777,520</td><td class="positive">-100%</td><td>소멸</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>전환권조정</td><td>(14,523,167)</td><td>0</td><td class="positive">+14,523,167</td><td class="positive">+100%</td><td>소멸</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅱ. 비유동부채</td><td>672,685,611</td><td>428,685,611</td><td class="positive">-244,000,000</td><td class="positive">-36.3%</td><td>장기차입금상환</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>퇴직급여충당부채</td><td>413,926,875</td><td>413,926,875</td><td class="neutral">0</td><td class="neutral">0.0%</td><td>변동없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>퇴직연금운용자산</td><td>(77,711,673)</td><td>(191,711,673)</td><td class="negative">-114,000,000</td><td class="negative">+147%</td><td>적립증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>주임종 장기차입금</td><td>336,470,409</td><td>206,470,409</td><td class="positive">-130,000,000</td><td class="positive">-38.6%</td><td>상환</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="total"><td>부채총계</td><td>2,449,861,283</td><td>1,848,030,761</td><td class="positive">-601,830,522</td><td class="positive">-24.6%</td><td>부채 크게감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="category"><td>【자 본】</td><td></td><td></td><td></td><td></td><td></td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅰ. 자본금</td><td>3,000,000,000</td><td>3,043,750,000</td><td class="positive">+43,750,000</td><td class="positive">+1.5%</td><td>전환사채전환</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>자본금</td><td>3,000,000,000</td><td>3,043,750,000</td><td class="positive">+43,750,000</td><td class="positive">+1.5%</td><td>전환사채전환</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅱ. 자본잉여금</td><td>5,571,937,950</td><td>2,772,085,882</td><td class="negative">-2,799,852,068</td><td class="negative">-50.3%</td><td>결손금보전사용</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>주식발행초과금</td><td>5,571,937,950</td><td>2,772,085,882</td><td class="negative">-2,799,852,068</td><td class="negative">-50.3%</td><td>결손금보전사용</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅲ. 자본조정</td><td>31,042,072</td><td>0</td><td class="negative">-31,042,072</td><td class="negative">-100%</td><td>전환권대가소멸</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>전환권대가</td><td>31,042,072</td><td>0</td><td class="negative">-31,042,072</td><td class="negative">-100%</td><td>전환으로소멸</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅳ. 기타포괄손익누계액</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>해당없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅴ. 이익잉여금</td><td>-3,188,362,215</td><td>182,404,619</td><td class="positive">+3,370,766,834</td><td class="positive">흑자전환</td><td>결손해소및흑자</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>미처분이익잉여금</td><td>-3,188,362,215</td><td>182,404,619</td><td class="positive">+3,370,766,834</td><td class="positive">흑자전환</td><td>결손해소및흑자</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="total"><td>자본총계</td><td>5,414,617,807</td><td>5,998,240,501</td><td class="positive">+583,622,694</td><td class="positive">+10.8%</td><td>자본크게증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="total"><td>부채 및 자본총계</td><td>7,864,479,090</td><td>7,846,271,262</td><td class="negative">-18,207,828</td><td class="negative">-0.2%</td><td>균형</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+            </tbody>
+        </table>
+
+        <h2>2. 손익계산서 전체 계정과목 변동분석</h2>
+        <table id="income-statement">
+            <thead>
+                <tr>
+                    <th style="width:180px">계정과목</th><th style="width:110px">2024(12개월)</th><th style="width:110px">2025(6개월)</th><th style="width:110px">증감액</th><th style="width:90px">연환산증감률</th><th style="width:140px">비고</th><th class="company-header">회사확인</th><th class="auditor-header">감사인확인</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="subcategory"><td>Ⅰ. 매출액</td><td>2,156,263,714</td><td>1,456,378,164</td><td class="negative">-699,885,550</td><td class="positive">+35.0%</td><td>매출 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>상품매출</td><td>167,400</td><td>545,446,214</td><td class="positive">+545,278,814</td><td class="positive">+651만%</td><td>상품매출 급증</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>용역매출</td><td>2,104,054,091</td><td>630,000,000</td><td class="negative">-1,474,054,091</td><td class="negative">-40.1%</td><td>용역매출 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>수수료매출</td><td>52,042,223</td><td>280,931,950</td><td class="positive">+228,889,727</td><td class="positive">+980%</td><td>수수료매출 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅱ. 매출원가</td><td>683,135,539</td><td>919,088,783</td><td class="negative">+235,953,244</td><td class="negative">+169%</td><td>매출원가 급증</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>용역매출원가</td><td>682,974,895</td><td>396,288,783</td><td class="positive">-286,686,112</td><td class="positive">+16.0%</td><td>용역원가 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>상품매출원가</td><td>160,644</td><td>522,800,000</td><td class="negative">+522,639,356</td><td class="negative">+65만%</td><td>상품원가 급증</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>기초상품재고액</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>재고없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>당기상품매입액</td><td>160,644</td><td>522,800,000</td><td class="negative">+522,639,356</td><td class="negative">+65만%</td><td>상품매입 급증</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>기말상품재고액</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>재고없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>제품매출원가</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>제조없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>기초제품재고액</td><td>650,380,000</td><td>0</td><td class="positive">-650,380,000</td><td class="positive">-100%</td><td>재고처분 완료</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>당기제품제조원가</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>제조없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>타계정으로대체액</td><td>650,380,000</td><td>0</td><td class="positive">-650,380,000</td><td class="positive">-100%</td><td>처분손실로 대체</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>기말제품재고액</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>재고없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅲ. 매출총이익</td><td>1,473,128,175</td><td>537,289,381</td><td class="negative">-935,838,794</td><td class="negative">-27.1%</td><td>매출총이익 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅳ. 판매비와관리비</td><td>359,026,893</td><td>349,168,604</td><td class="positive">-9,858,289</td><td class="positive">+94.5%</td><td>관리비 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>임원급여</td><td>59,123,640</td><td>29,561,820</td><td class="positive">-29,561,820</td><td class="neutral">0.0%</td><td>임원급여 동일</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>직원급여</td><td>0</td><td>22,667,550</td><td class="negative">+22,667,550</td><td class="negative">신규</td><td>직원급여 신규</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>퇴직급여</td><td>4,926,970</td><td>0</td><td class="positive">-4,926,970</td><td class="positive">-100%</td><td>퇴직급여 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>복리후생비</td><td>0</td><td>730,260</td><td class="negative">+730,260</td><td class="negative">신규</td><td>복리후생비 신규</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>여비교통비</td><td>0</td><td>2,717,400</td><td class="negative">+2,717,400</td><td class="negative">신규</td><td>여비교통비 신규</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>접대비</td><td>8,527,930</td><td>130,520</td><td class="positive">-8,397,410</td><td class="positive">-96.9%</td><td>접대비 대폭감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>통신비</td><td>5,206,381</td><td>2,640,514</td><td class="positive">-2,565,867</td><td class="positive">+1.5%</td><td>통신비 소폭증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>세금과공과금</td><td>1,185,089</td><td>16,786,460</td><td class="negative">+15,601,371</td><td class="negative">+2731%</td><td>세금과공과금 급증</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>감가상각비</td><td>29,872,856</td><td>0</td><td class="positive">-29,872,856</td><td class="positive">-100%</td><td>감가상각비 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>보험료</td><td>2,854,452</td><td>2,264,861</td><td class="positive">-589,591</td><td class="positive">+58.7%</td><td>보험료 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>차량유지비</td><td>10,461,622</td><td>4,345,903</td><td class="positive">-6,115,719</td><td class="positive">-16.9%</td><td>차량유지비 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>운반비</td><td>57,000</td><td>7,000</td><td class="positive">-50,000</td><td class="positive">-75.4%</td><td>운반비 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>도서인쇄비</td><td>280,000</td><td>420,000</td><td class="negative">+140,000</td><td class="negative">+200%</td><td>도서인쇄비 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>소모품비</td><td>1,242,000</td><td>2,308,895</td><td class="negative">+1,066,895</td><td class="negative">+272%</td><td>소모품비 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>지급수수료</td><td>15,681,805</td><td>261,333,431</td><td class="negative">+245,651,626</td><td class="negative">+3231%</td><td>지급수수료 급증</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>광고선전비</td><td>500,000</td><td>3,000,000</td><td class="negative">+2,500,000</td><td class="negative">+1100%</td><td>광고선전비 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>대손상각비</td><td>216,030,000</td><td>0</td><td class="positive">-216,030,000</td><td class="positive">-100%</td><td>대손상각비 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>건물관리비</td><td>0</td><td>253,990</td><td class="negative">+253,990</td><td class="negative">신규</td><td>건물관리비 신규</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>무형고정자산상각</td><td>3,077,148</td><td>0</td><td class="positive">-3,077,148</td><td class="positive">-100%</td><td>무형자산상각 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅴ. 영업이익</td><td>1,114,101,282</td><td>188,120,777</td><td class="negative">-925,980,505</td><td class="negative">-66.2%</td><td>영업이익 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅵ. 영업외수익</td><td>10,321,451</td><td>38,958,040</td><td class="positive">+28,636,589</td><td class="positive">+655%</td><td>영업외수익 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>이자수익</td><td>2,674,224</td><td>339,441</td><td class="positive">-2,334,783</td><td class="positive">-74.6%</td><td>이자수익 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>채무면제이익</td><td>1,930,308</td><td>0</td><td class="positive">-1,930,308</td><td class="positive">-100%</td><td>채무면제이익 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>잡이익</td><td>5,716,919</td><td>38,618,599</td><td class="positive">+32,901,680</td><td class="positive">+1250%</td><td>잡이익 급증</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅶ. 영업외비용</td><td>835,560,543</td><td>44,674,198</td><td class="positive">-790,886,345</td><td class="positive">-89.3%</td><td>영업외비용 대폭감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>이자비용</td><td>111,359,198</td><td>44,674,198</td><td class="positive">-66,685,000</td><td class="positive">-19.8%</td><td>이자비용 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>기타의대손상각비</td><td>58,500,000</td><td>0</td><td class="positive">-58,500,000</td><td class="positive">-100%</td><td>기타대손상각비 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>재고자산처분손실</td><td>650,380,000</td><td>0</td><td class="positive">-650,380,000</td><td class="positive">-100%</td><td>재고처분손실 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>전기오류수정손실</td><td>12,761,007</td><td>0</td><td class="positive">-12,761,007</td><td class="positive">-100%</td><td>전기오류수정손실 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>잡손실</td><td>2,560,338</td><td>0</td><td class="positive">-2,560,338</td><td class="positive">-100%</td><td>잡손실 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅷ. 법인세차감전이익</td><td>288,862,190</td><td>182,404,619</td><td class="negative">-106,457,571</td><td class="positive">+26.3%</td><td>법인세차감전이익 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅸ. 법인세등</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>법인세없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="total"><td>Ⅹ. 당기순이익</td><td>288,862,190</td><td>182,404,619</td><td class="negative">-106,457,571</td><td class="positive">+26.3%</td><td>당기순이익 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+            </tbody>
+        </table>
+
+        <h2>3. 용역원가명세서 전체 계정과목 변동분석</h2>
+        <table id="service-cost">
+            <thead>
+                <tr>
+                    <th style="width:180px">계정과목</th><th style="width:110px">2024(12개월)</th><th style="width:110px">2025(6개월)</th><th style="width:110px">증감액</th><th style="width:90px">연환산증감률</th><th style="width:140px">비고</th><th class="company-header">회사확인</th><th class="auditor-header">감사인확인</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="subcategory"><td>Ⅰ. 용역원재료비</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>원재료비없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅱ. 노무비</td><td>370,926,426</td><td>294,736,310</td><td class="positive">-76,190,116</td><td class="positive">+58.9%</td><td>노무비 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>급여</td><td>319,491,500</td><td>0</td><td class="positive">-319,491,500</td><td class="positive">-100%</td><td>급여 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>임금</td><td>0</td><td>294,736,310</td><td class="negative">+294,736,310</td><td class="negative">신규</td><td>임금 신규</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>퇴직급여</td><td>51,434,926</td><td>0</td><td class="positive">-51,434,926</td><td class="positive">-100%</td><td>퇴직급여 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅲ. 외주비</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>외주비없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅳ. 경비</td><td>312,048,469</td><td>101,552,473</td><td class="positive">-210,495,996</td><td class="positive">-34.9%</td><td>경비 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>복리후생비</td><td>23,705,644</td><td>11,272,836</td><td class="positive">-12,432,808</td><td class="positive">-4.8%</td><td>복리후생비 소폭감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>여비교통비</td><td>4,923,162</td><td>2,221,200</td><td class="positive">-2,701,962</td><td class="positive">-9.7%</td><td>여비교통비 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>통신비</td><td>318,380</td><td>43,180</td><td class="positive">-275,200</td><td class="positive">-72.9%</td><td>통신비 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>가스수도료</td><td>111,890</td><td>310,510</td><td class="negative">+198,620</td><td class="negative">+455%</td><td>가스수도료 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>세금과공과금</td><td>23,458,040</td><td>0</td><td class="positive">-23,458,040</td><td class="positive">-100%</td><td>세금과공과금 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>감가상각비</td><td>13,760,462</td><td>0</td><td class="positive">-13,760,462</td><td class="positive">-100%</td><td>감가상각비 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>지급임차료</td><td>48,806,000</td><td>21,206,000</td><td class="positive">-27,600,000</td><td class="positive">-13.1%</td><td>지급임차료 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>보험료</td><td>35,604,834</td><td>21,682,016</td><td class="positive">-13,922,818</td><td class="positive">+21.8%</td><td>보험료 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>차량유지비</td><td>20,720,701</td><td>10,315,050</td><td class="positive">-10,405,651</td><td class="positive">-0.3%</td><td>차량유지비 소폭감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>경상연구개발비</td><td>4,800,000</td><td>2,400,000</td><td class="positive">-2,400,000</td><td class="positive">0.0%</td><td>경상연구개발비 동일</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>도서인쇄비</td><td>60,000</td><td>0</td><td class="positive">-60,000</td><td class="positive">-100%</td><td>도서인쇄비 없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>소모품비</td><td>70,227,251</td><td>18,248,694</td><td class="positive">-51,978,557</td><td class="positive">-48.0%</td><td>소모품비 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="account"><td>지급수수료</td><td>65,552,105</td><td>13,852,987</td><td class="positive">-51,699,118</td><td class="positive">-57.7%</td><td>지급수수료 감소</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                
+                <tr class="subcategory"><td>Ⅴ. 당기총용역비용</td><td>682,974,895</td><td>396,288,783</td><td class="positive">-286,686,112</td><td class="positive">+16.0%</td><td>총용역비용 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅵ. 공사손실충당전입</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>해당없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅶ. 공사손실충당환입</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>해당없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅷ. 기초미완성용역액</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>기초미완성용역없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅸ. 타계정에서대체액</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>타계정대체없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>Ⅹ. 합계</td><td>682,974,895</td><td>396,288,783</td><td class="positive">-286,686,112</td><td class="positive">+16.0%</td><td>합계 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>ⅩⅠ. 기말미완성공사액</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>기말미완성공사없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="subcategory"><td>ⅩⅡ. 타계정으로대체액</td><td>0</td><td>0</td><td class="neutral">0</td><td class="neutral">-</td><td>타계정대체없음</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+                <tr class="total"><td>ⅩⅢ. 당기용역원가</td><td>682,974,895</td><td>396,288,783</td><td class="positive">-286,686,112</td><td class="positive">+16.0%</td><td>당기용역원가 증가</td><td class="company-cell" contenteditable="true">회사 검토의견...</td><td class="auditor-cell" contenteditable="true">감사인 검토의견...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var companyCells = document.querySelectorAll('.company-cell');
+            var auditorCells = document.querySelectorAll('.auditor-cell');
+            
+            function initCell(cell, placeholderText) {
+                if (!cell.textContent.trim() || cell.textContent === placeholderText) {
+                    cell.classList.add('placeholder-text');
+                    cell.textContent = placeholderText;
+                }
+                
+                cell.addEventListener('focus', function() {
+                    if (this.classList.contains('placeholder-text')) {
+                        this.textContent = '';
+                        this.classList.remove('placeholder-text');
+                    }
+                });
+                
+                cell.addEventListener('blur', function() {
+                    if (!this.textContent.trim()) {
+                        this.textContent = placeholderText;
+                        this.classList.add('placeholder-text');
+                    }
+                });
+            }
+            
+            for (var i = 0; i < companyCells.length; i++) {
+                initCell(companyCells[i], '회사 검토의견...');
+            }
+            
+            for (var j = 0; j < auditorCells.length; j++) {
+                initCell(auditorCells[j], '감사인 검토의견...');
+            }
+        });
+
+        function downloadShare() {
+            var htmlContent = document.documentElement.outerHTML;
+            var blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+            var link = document.createElement('a');
+            var url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', '데이터젠_재무분석_공유용.html');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportCSV(tableId, filename) {
+            var table = document.getElementById(tableId);
+            var csv = [];
+            
+            var headers = [];
+            var headerCells = table.querySelectorAll('thead tr th');
+            for (var i = 0; i < headerCells.length; i++) {
+                headers.push(headerCells[i].textContent);
+            }
+            csv.push(headers.join(','));
+            
+            var rows = table.querySelectorAll('tbody tr');
+            for (var i = 0; i < rows.length; i++) {
+                var rowData = [];
+                var cells = rows[i].querySelectorAll('td');
+                for (var j = 0; j < cells.length; j++) {
+                    var text = cells[j].textContent.replace(/,/g, '');
+                    if (text === '회사 검토의견...' || text === '감사인 검토의견...') {
+                        text = '';
+                    }
+                    rowData.push(text);
+                }
+                csv.push(rowData.join(','));
+            }
+            
+            var csvContent = csv.join('\n');
+            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            var url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
